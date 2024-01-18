@@ -2,12 +2,12 @@
 Example project structure for testing a dynamics model driven application
 
 # environment-config.ts
-The environment-config.ts file in the project root needs to be populated with the following details for the example test to run:
-    - webApiUrl: The base url fror making requests to dataverse
-    - appUrl: The url for accessing the application directly i.e. include appid and relevant guid
-    - email: The username for accessing the aplication
-    - password: The coresponding password for the above username
-    - secret: The client secret from the above user's MFA device. Can be obtained during setup of the MFA device. See https://github.com/microsoft/EasyRepro?tab=readme-ov-file#mfa-support
+The environment-config.ts file in the project root needs to be populated with the following details for the test(s) to run:
+ - webApiUrl: The base url fror making requests to dataverse
+ - appUrl: The url for accessing the application directly i.e. include appid and relevant guid
+ - email: The username for accessing the aplication
+ - password: The coresponding password for the above username
+ - secret: The client secret from the above user's MFA device. Can be obtained during setup of the MFA device. See https://github.com/microsoft/EasyRepro?tab=readme-ov-file#mfa-support
 
 
 # Running the tests
