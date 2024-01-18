@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "sourceMap": true,
+    "lib": ["es2015"],
+    
+  },
+  "include": [
+    "./tests/**/*.ts",
+    "./tests/*.ts",
+    "./types/*.ts",
+    "dataverse/entities/contact/contact-builder.ts",
+    "dataverse/entities/case.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

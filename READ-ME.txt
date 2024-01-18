@@ -1,0 +1,7 @@
+Example project structure created via the npm init playwright command
+Added example of page object pattern to test calculator site
+
+1) npm install playwright (as admin)  - install playwright if required
+2) npm init playwright [projectName]  - initiate project
+3) npx playwright test --debug      - run all tests in debug
+4) npx playwright show-report  - show the test report
