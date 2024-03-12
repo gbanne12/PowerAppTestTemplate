@@ -7,5 +7,5 @@
 /playwright/.cache/
 /tests-examples/
 
-envrionment.config.js
+environment.config.js
 

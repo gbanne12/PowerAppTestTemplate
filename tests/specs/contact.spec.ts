@@ -2,6 +2,7 @@ import {Page, expect, test} from '@playwright/test';
 import { Contact } from '../../dataverse/entities/contact.js';
 import { DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
 import { pageObjectTest } from '../fixtures/test-fixtures.js';
+import { ContactView } from '../pages/contact-view-page.js';
 
 
 /*
@@ -14,6 +15,16 @@ pageObjectTest('Can add a new contact', async ({ page, contactForm }) => {
 
     const allContacts = await getDataverseContacts(page);
     expect(allContacts).toContainRecord(contact);
+});
+
+test('Can filter contacts by keyword', async ({page}) => {
+    globalThis.myPage = page;
+
+    const contactView = new ContactView(page);
+    await contactView.load();
+    const searchTerm = 'last';
+    await contactView.filterByKeyword(searchTerm);
+    const result = await contactView.resultGridContains(searchTerm, {columnHeader: 'Full name', exact: true});    
 });
 
 
