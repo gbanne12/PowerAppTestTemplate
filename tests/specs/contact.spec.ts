@@ -1,4 +1,4 @@
-import {Page, expect, test} from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { Contact } from '../../dataverse/entities/contact.js';
 import { DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
 import { pageObjectTest } from '../fixtures/test-fixtures.js';
@@ -16,8 +16,33 @@ pageObjectTest('Can add a new contact', async ({ page, contactForm }) => {
     expect(allContacts).toContainRecord(contact);
 });
 
+pageObjectTest('Can filter contacts by keyword', async ({contactView }) => {
+    const searchTerm = 'last';
 
-async function getDataverseContacts(context: Page) : Promise<Contact[]> {
+    await contactView.load();
+    await contactView.filterByKeyword(searchTerm);
+
+    const result = await contactView.resultGridContains(searchTerm);
+    expect(result).toBeFalsy();
+});
+
+pageObjectTest('Can add columns to the view', async ({contactView }) => {
+    await contactView.load();
+
+    const columnNames = ['Birthday', 'Owner'];
+    await contactView.addColumnsToGrid(columnNames);
+
+    const headers = await contactView.getGridColumnHeaders();
+
+    const isHeader = (value: string): boolean => {
+        return headers.indexOf(value) !== -1;
+    };
+    
+    expect(columnNames.every(isHeader), `Not all column names were found among following:  ${headers.toString}`);
+});
+
+
+async function getDataverseContacts(context: Page): Promise<Contact[]> {
     await sleep(5000);  //let the record enter the db
     const response = await new DataverseRequest().get('contacts', context);
     if ('error' in response) {

@@ -5,7 +5,7 @@ export class LoginPage {
 
     private readonly usernameInput: Locator;
     private readonly passwordInput: Locator;
-    private readonly otpInput: Locator;
+    private readonly multiFactorAuthenticationInput: Locator;
     private readonly submitButton: Locator;
     private readonly keepMeSignedInText: Locator
     private readonly applicationNavBar: Locator;
@@ -13,7 +13,7 @@ export class LoginPage {
     constructor(page: Page){
         this.usernameInput = page.getByPlaceholder('Email, phone, or Skype');
         this.passwordInput = page.getByPlaceholder('Password');
-        this.otpInput = page.getByPlaceholder('Code');
+        this.multiFactorAuthenticationInput = page.getByPlaceholder('Code');
         this.submitButton = page.locator("input[type=submit]");
         this.applicationNavBar = page.locator("#siteMapPanelBodyDiv")
         this.keepMeSignedInText = page.locator("#KmsiDescription")
@@ -26,14 +26,19 @@ export class LoginPage {
     await this.passwordInput.fill(password);
     await this.submitButton.click();
 
-    const token = authenticator.generate(clientSecret);
-    await this.otpInput.fill(token);
-    await this.submitButton.click();
+    try {
+        this.multiFactorAuthenticationInput.waitFor({state: "visible", timeout: 3000});
+        const generatedCode = authenticator.generate(clientSecret);
+        await this.multiFactorAuthenticationInput.fill(generatedCode);
+        await this.submitButton.click();
 
-    await this.keepMeSignedInText.waitFor({state: "visible"})
-    await this.submitButton.click();  
+    } finally {
+        await this.keepMeSignedInText.waitFor({state: "visible"})
+        await this.submitButton.click();  
+    
+        await this.applicationNavBar.waitFor({state: "visible"});
+    }
 
-    await this.applicationNavBar.waitFor({state: "visible"});
  }
 
 }
