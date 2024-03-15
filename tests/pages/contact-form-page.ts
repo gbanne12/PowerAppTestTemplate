@@ -24,6 +24,10 @@ export class ContactForm {
       this.saveStatus = page.getByLabel('Save status - Saved');
    }
 
+   async goToContactForm(id: string) {
+      await this.page.goto(environment.appUrl + `&forceUCI=1&pagetype=entityrecord&etn=contact&id=${id}`);
+   }
+
    async add(contact: Contact) {
       await this.page.goto(environment.appUrl + '&forceUCI=1&pagetype=entityrecord&etn=contact');
       await this.firstName.fill(contact.getFirstName());
