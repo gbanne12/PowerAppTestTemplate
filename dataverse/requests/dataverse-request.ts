@@ -31,7 +31,7 @@ export class DataverseRequest {
 
 
     /**
-     * Sends a POST request to the specified entity in the Dataverse.
+     * Sends a POST request to add a record for the specified entity in Dataverse.
      * 
      * @param context - The page context which is assumed to be authenticated to Dataverse.
      * @param entity - The name of the entity to send the request to.
@@ -73,6 +73,43 @@ export class DataverseRequest {
         }
 
         return id;
+    }
+
+    /**
+     * Sends a DELETE request to remove a row from the specified entity in Dataverse.
+     * 
+     * @param context - The page context which is assumed to be authenticated to Dataverse.
+     * @param entity - The name of the entity to send the request to.
+     * @param id - The ID of the record to delete.
+     * @returns A Promise that resolves to the status code of the response. Will be 204 (No Content) if successful.
+     * @throws An error if the response code is not between 200 - 399.
+     */
+    public async delete(context: Page, entity: EntityLogicalName, id: string): Promise<number> {
+        const url = environment.webApiUrl + "/" + entity + `(${id})`;
+        const response = await context.request.delete(url, { failOnStatusCode: true });
+        return response.status();
+    }
+
+    /**
+     * Sends an PATCH request to ppdates an existing record in Dataverse
+     * @param context - The page context which is assumed to be authenticated to Dataverse.
+     * @param entity - The name of the entity to send the request to.
+     * @param id - The ID of the entity record to update.
+     * @param options - Additional options for the PATCH request.
+     * @returns A promise that resolves to the HTTP status code of the response. Will be 204 (No Content) if successful.
+     * @throws An error if the response code is not between 200 - 399.
+     */
+    public async patch(context: Page, entity: EntityLogicalName, id: string, options: {
+        data: any,
+        headers?: { [key: string]: string; }
+    }): Promise<number> {
+        const url = environment.webApiUrl + "/" + entity + `(${id})`;
+        const patchData = options.data;
+        const patchHeaders: { [key: string]: string; } = options.headers || {};
+        patchHeaders["If-Match"] = "*";
+
+        const response = await context.request.patch(url, { data: patchData, headers: patchHeaders, failOnStatusCode: true });
+        return response.status();
     }
 
 }
