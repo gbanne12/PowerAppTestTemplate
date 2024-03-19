@@ -1,38 +1,55 @@
 # Pipeline from https://playwright.dev/docs/ci#bitbucket-pipelines
 
 trigger:
-- main
+  - main
 
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '18'
-  displayName: 'Install Node.js'
+variables:
+  - group: playwright-credentials
 
-- script: npm ci
-  displayName: 'npm ci'
-- script: npx playwright install --with-deps
-  displayName: 'Install Playwright browsers'
-- script: npx playwright test
-  displayName: 'Run Playwright tests'
-  env:
-    CI: 'true'
-- task: PublishTestResults@2
-  displayName: 'Publish test results'
-  inputs:
-    searchFolder: 'test-results'
-    testResultsFormat: 'JUnit'
-    testResultsFiles: 'e2e-junit-results.xml'
-    mergeTestResults: true
-    failTaskOnFailedTests: true
-    testRunTitle: 'My End-To-End Tests'
-  condition: succeededOrFailed()
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: playwright-report
-    artifact: playwright-report
-    publishLocation: 'pipeline'
-  condition: succeededOrFailed()
+steps:
+  - script: |
+      echo "export const environment = {" > environment.config.ts
+      echo "    password: \"$(password)\"," >> environment.config.ts
+      echo "    username: \"$(username)\"," >> environment.config.ts
+      echo "    secret: \"$(secret)\"," >> environment.config.ts
+      echo "    appUrl: \"$(appUrl)\"," >> environment.config.ts
+      echo "    webApiUrl: \"$(webApiUrl)\"," >> environment.config.ts
+      echo "};" >> environment.config.ts
+    displayName: "Write credentials to environment.config.ts"
+
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "18"
+    displayName: "Install Node.js"
+
+  - script: npm ci
+    displayName: "npm ci"
+
+  - script: npx playwright install --with-deps
+    displayName: "Install Playwright browsers"
+
+  - script: npx playwright test
+    displayName: "Run Playwright tests"
+    env:
+      CI: "true"
+
+  - task: PublishTestResults@2
+    displayName: "Publish test results"
+    inputs:
+      searchFolder: "test-results"
+      testResultsFormat: "JUnit"
+      testResultsFiles: "e2e-junit-results.xml"
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+      testRunTitle: "My End-To-End Tests"
+    condition: succeededOrFailed()
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: playwright-report
+      artifact: playwright-report
+      publishLocation: "pipeline"
+    condition: succeededOrFailed()
