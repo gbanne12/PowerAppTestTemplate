@@ -48,7 +48,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['junit', { outputFile: 'test-results/e2e-junit-results.xml' }]],
   use: {
-    headless: false,
+    headless: true,
     screenshot: 'only-on-failure',
   },
 
