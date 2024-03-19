@@ -43,10 +43,10 @@ expect.extend({
  */
 export default defineConfig({
   outputDir: 'test-results',
-  timeout:  1 * 120 * 1000, //total time test is allowed to run
+  timeout: 1 * 120 * 1000, //total time test is allowed to run
   fullyParallel: false,
   workers: 1,
-  reporter: 'html',
+  reporter: [['junit', { outputFile: 'test-results/e2e-junit-results.xml' }]],
   use: {
     headless: false,
     screenshot: 'only-on-failure',
@@ -63,6 +63,19 @@ export default defineConfig({
       },
     },
 
+    // Logged-in project assumes the user already has an authenticated session 
+    {
+      name: 'Chrome Logged In',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        storageState: 'playwright/.auth/user.json',
+        launchOptions: {
+          args: ["--start-maximized"]
+        },
+      },
+    },
+
     // Main project runs tests in chrome and depends on setup project to log in for the tests
     {
       name: 'Chrome',
@@ -74,17 +87,6 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    // Logged-in project assumes the user already has an authenticated session 
-    {
-      name: 'Chrome Logged In',
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: 'chrome',
-        storageState: 'playwright/.auth/user.json',
-        launchOptions: {
-          args: ["--start-maximized"]
-      },
-    },
-  }
   ],
+
 });
