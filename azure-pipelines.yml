@@ -24,6 +24,10 @@ steps:
       ls $(Build.SourcesDirectory)
     displayName: 'List files in directory'
 
+  - powershell: |
+      Get-Content $(Build.SourcesDirectory)/environment.config.ts
+    displayName: 'Print File Contents'
+
   - task: NodeTool@0
     inputs:
       versionSpec: "18"
@@ -32,7 +36,7 @@ steps:
   - script: npm ci
     displayName: "npm ci"
 
-  - script: npx playwright install --with-deps
+  - script: npx playwright install chrome --with-deps
     displayName: "Install Playwright browsers"
 
   - script: npx playwright test --project=Chrome
