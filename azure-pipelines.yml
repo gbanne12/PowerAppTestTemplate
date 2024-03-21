@@ -11,13 +11,13 @@ variables:
 
 steps:
   - script: |
-      echo "export const environment = {" > $(Build.SourcesDirectory)/environment.config.ts
-      echo "    password: \"$(password)\"," >> $(Build.SourcesDirectory)/environment.config.ts
-      echo "    username: \"$(username)\"," >> $(Build.SourcesDirectory)/environment.config.ts
-      echo "    secret: \"$(secret)\"," >> $(Build.SourcesDirectory)/environment.config.ts
-      echo "    appUrl: \"$(appUrl)\"," >> $(Build.SourcesDirectory)/environment.config.ts
-      echo "    webApiUrl: \"$(webApiUrl)\"," >> $(Build.SourcesDirectory)/environment.config.ts
-      echo "};" >> $(Build.SourcesDirectory)/environment.config.ts
+      echo export const environment = { > $(Build.SourcesDirectory)/environment.config.ts
+      echo     password: \"$(password)\", >> $(Build.SourcesDirectory)/environment.config.ts
+      echo     username: \"$(username)\", >> $(Build.SourcesDirectory)/environment.config.ts
+      echo     secret: \"$(secret)\", >> $(Build.SourcesDirectory)/environment.config.ts
+      echo     appUrl: \"$(appUrl)\", >> $(Build.SourcesDirectory)/environment.config.ts
+      echo     webApiUrl: \"$(webApiUrl)\", >> $(Build.SourcesDirectory)/environment.config.ts
+      echo }; >> $(Build.SourcesDirectory)/environment.config.ts
     displayName: "Write credentials to $(Build.SourcesDirectory)/environment.config.ts"
 
   - script: |
