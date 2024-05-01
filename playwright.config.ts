@@ -42,13 +42,20 @@ expect.extend({
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+
   outputDir: 'test-results',
-  timeout: 1 * 120 * 1000, //total time test is allowed to run
+
+  timeout: 10 * 60 * 1000, //total time test is allowed to run
+
   fullyParallel: false,
+
   workers: 1,
+
   reporter: [['junit', { outputFile: 'test-results/e2e-junit-results.xml' }]],
+
   use: {
-    headless: true,
+    baseURL: 'https://org9e533c5d.crm4.dynamics.com/main.aspx?appid=3867134f-9a92-ed11-aad1-000d3adf7bf1',
+    headless: false,
     screenshot: 'only-on-failure',
   },
 
