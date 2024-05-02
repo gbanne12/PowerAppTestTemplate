@@ -1,83 +1,100 @@
 import { Page, test } from '@playwright/test';
-import { ContactForm } from '../pages/forms/contact-form-page.js';
 import { randomizeName } from '../data/contact-data.js';
 import { DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
-import { Contact } from '../../dataverse/entities/contact.js';
 
-
-type partialUrls = {
-    baseFormUrl: string;
-    baseViewUrl: string;
+type DataverseEntity = {
+    logicalName: string,
+    logicalCollectionName: string,
+    fields: { [key: string]: string },
 };
 
-type DataverseEntities = {
-    contact: Contact;
-    account: { name: string };
+type Navigation = {
+    partialUrl: { form: string; view: string; }
 };
 
-type TestHelpers = partialUrls & DataverseEntities;
+type EntityList = {
+    contact: DataverseEntity;
+    account: DataverseEntity;
+    product: DataverseEntity
+}
+
+const contact: DataverseEntity = {
+    logicalName: 'contact',
+    logicalCollectionName: 'contacts',
+    fields: {}
+};
+
+const account: DataverseEntity = {
+    logicalName: 'account',
+    logicalCollectionName: 'accounts',
+    fields: {}
+};
+
+const product: DataverseEntity = {
+    logicalName: 'product',
+    logicalCollectionName: 'products',
+    fields: {}
+};
 
 
 /**
  * Extends the test base with access to test helpers.
  * 
+ * This fixture provides a way to create and use entities in the Dataverse.
+ * To extend for a new entity, add a new property to the EntityList type 
+ * and create a DataverseEntity type with the required fields to be added as part of the record.
+ * 
  *  **Usage**
  * 
- * AppTest('Can use the contact fixture with Page param', async ({ contact, page }) => {
- *   expect(await page.getByLabel('First Name').getAttribute('value')).toBe(contact.getFirstName());
- *  });
+ * entityTest('Can use the account setup by the test fixture', async ({ page, account}) => {
+ *   expect(await page.getByLabel('Account Name').getAttribute('value')).toBe(account.fields.name);
+ * });
  * 
  */
-export const appTest = test.extend<TestHelpers>({
+export const entityTest = test.extend<Navigation & EntityList>({
 
-    // Suffix the entity logical name to access view page for that entity
-    baseFormUrl: async ({ baseURL, page }, use) => {
-        const url = baseURL + '&forceUCI=1&pagetype=entityrecord&etn=';
-        await use(url);
+    partialUrl: async ({ baseURL }, use) => {
+        const formUrl = baseURL + '&forceUCI=1&pagetype=entityrecord&etn=';
+        const viewUrl = baseURL + '&forceUCI=1&pagetype=entitylist&etn=';
+
+        await use({ form: formUrl, view: viewUrl });
     },
 
-    // Suffix the entity logical name to access the new form page for that entity
-    baseViewUrl: async ({ baseURL, page }, use) => {
-        const url = baseURL + '&forceUCI=1&pagetype=entitylist&etn=';
-        await use(url);
+    // Define a contact record and set it up for use in the tests
+    contact: async ({ page, partialUrl: url }, use) => {
+        contact.fields = {
+            firstName: randomizeName('firstname'),
+            lastName: randomizeName('lastname'),
+        };
+        await useEntity(page, url.form, contact, use);
     },
 
-    // Add a new contact to dataverse and open it for the test to use
-    contact: async ({ page }, use) => {
-        const logicalCollectionName = 'contacts';
-
-        const contact = new Contact.Builder().buildGenericContact();
-        const request = new DataverseRequest(page);
-
-        const contactId = await request.post(logicalCollectionName, {
-            data:
-            {
-                firstname: contact.getFirstName(),
-                lastname: contact.getLastName()
-            }
-        });
-
-        const contactForm = new ContactForm(page);
-        contactForm.goToContactForm(contactId);
-        await use(contact)
-
-        let deleteSuccess = await request.delete(logicalCollectionName, contactId);
-
+    // Define an account record and set it up for use in the tests
+    account: async ({ page, partialUrl: url }, use) => {
+        account.fields = {
+            name: randomizeName('firstname') + 'Account PLC',
+        };
+        await useEntity(page, url.form, account, use);
     },
 
-    // Add a new account to dataverse and open it for the test to use
-    account: async ({ page, baseFormUrl }, use) => {
-        const logicalCollectionName = 'accounts';
-        const account = { name: randomizeName('lastname') + 'Account PLC' };
-
-        const request = new DataverseRequest(page);
-        const accountId = await request.post(logicalCollectionName, { data: account });
-        await page.goto(baseFormUrl + 'account' + '&id=' + accountId);
-
-        await use(account)
-
-        await request.delete(logicalCollectionName, accountId);
+    // Define a product record and set it up for use in the tests
+    product: async ({ page, partialUrl: url }, use) => {
+        product.fields = {
+            name: randomizeName('lastname') + 'Account PLC',
+        };
+        await useEntity(page, url.form, product, use);
     }
 
 });
+
+async function useEntity(page: Page, baseFormUrl: string, entity: DataverseEntity, use: (entity: DataverseEntity) => Promise<void>) {
+    const request = new DataverseRequest(page);
+    const entityId = await request.post(entity.logicalCollectionName, { data: entity.fields });
+    await page.goto(baseFormUrl + entity.logicalName + '&id=' + entityId);
+
+    await use(entity);
+
+    await request.delete(entity.logicalCollectionName, entityId);
+}
+
 

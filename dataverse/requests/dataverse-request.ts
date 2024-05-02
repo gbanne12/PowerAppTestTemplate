@@ -1,9 +1,6 @@
 import { Page } from "@playwright/test";
 import { environment } from "../../environment.config.js";
 
-type EntityLogicalName = 'contacts' | 'accounts';
-
-
 export class DataverseRequest {
 
     private context: Page;
@@ -12,7 +9,7 @@ export class DataverseRequest {
      * Represents a Dataverse request.
      * @param context - The Playwright page context which is assumed to be authenticated
      */
-    constructor(context: Page) { 
+    constructor(context: Page) {
         this.context = context;
     }
 
@@ -23,7 +20,7 @@ export class DataverseRequest {
      * @returns A promise that resolves to an array of records from the specified entity.
      * @throws An error if the response code is not between 200 - 399 or if the JSON parsing fails.
      */
-    public async get<T>(entity: EntityLogicalName): Promise<T[]> {
+    public async get<T>(entity: string): Promise<T[]> {
         const url = environment.webApiUrl + "/" + entity;
         const serverResponse = await this.context.request.get(url, { failOnStatusCode: true });
 
@@ -50,7 +47,7 @@ export class DataverseRequest {
      * @returns A Promise that resolves to the ID for the created record.
      * @throws An error if the response code is not between 200 - 399 or if the ID cannot be parsed.
      */
-    public async post(entity: EntityLogicalName, options: {
+    public async post(entity: string, options: {
         /**
         * Allows to set post data of the request. If the data parameter is an object, it will be serialized to json string
         * and `content-type` header will be set to `application/json` if not explicitly set. Otherwise the `content-type`
@@ -92,7 +89,7 @@ export class DataverseRequest {
      * @returns A Promise that resolves to the status code of the response. Will be 204 (No Content) if successful.
      * @throws An error if the response code is not between 200 - 399.
      */
-    public async delete(entity: EntityLogicalName, id: string): Promise<number> {
+    public async delete(entity: string, id: string): Promise<number> {
         const url = environment.webApiUrl + "/" + entity + `(${id})`;
         const response = await this.context.request.delete(url, { failOnStatusCode: true });
         return response.status();
@@ -106,7 +103,7 @@ export class DataverseRequest {
      * @returns A promise that resolves to the HTTP status code of the response. Will be 204 (No Content) if successful.
      * @throws An error if the response code is not between 200 - 399.
      */
-    public async patch(entity: EntityLogicalName, id: string, options: {
+    public async patch(entity: string, id: string, options: {
         data: any,
         headers?: { [key: string]: string; }
     }): Promise<number> {
