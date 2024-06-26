@@ -1,5 +1,8 @@
 import { Locator, Page } from "@playwright/test";
 
+/**
+ * Represents shared functionality for the view page of an entity in the model driven app.
+ */
 export abstract class EntityView {
 
     protected page: Page;
