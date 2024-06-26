@@ -1,42 +1,6 @@
 import { expect, defineConfig, devices } from '@playwright/test';
 import { Contact } from "./dataverse/entities/contact.js"
 
-// Add custom matchers for use in tests
-expect.extend({
-  // Custom matcher for checking if Contact records exists in array 
-  toContainRecord(contactsArray: Contact[], contact: Contact) {
-
-    let contactExists = false;
-    for (const item of contactsArray) {
-      const isMatchingContact =
-        item?.emailaddress1 === contact.getEmail() &&
-        item.lastname === contact.getLastName() &&
-        item?.firstname === contact.getFirstName()
-
-      if (isMatchingContact) {
-        contactExists = true;
-        break;
-      }
-    }
-
-    if (contactExists) {
-      return {
-        pass: true,
-        message: () => `Found contact: ${contact.getFirstName()} ${contact.getLastName()}`,
-
-      };
-    } else {
-      return {
-        pass: false,
-        message: () => `Expected contact to exist, but did not find: ${contact.getFirstName()} ${contact.getLastName()}`,
-      };
-    }
-  }
-
-});
-
-
-
 /**
  * Define the config for the tests
  * See https://playwright.dev/docs/test-configuration.
