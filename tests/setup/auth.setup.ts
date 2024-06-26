@@ -1,6 +1,6 @@
  import { test as setup } from '@playwright/test';
  import { LoginPage } from '../pages/login-page.js';
- import { environment } from '../../environment.config.js'
+import { environment } from '../../environment.config.js';
 
 const authFile = 'playwright/.auth/user.json';
 

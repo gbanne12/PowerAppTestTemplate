@@ -1,21 +1,44 @@
-import { Page, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 import { randomizeName } from '../data/contact-data.js';
-import { DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
+import { DataverseEntity, DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
+import { Contact } from '../../dataverse/entities/contact.js';
 
-type DataverseEntity = {
-    logicalName: string,
-    logicalCollectionName: string,
-    fields: { [key: string]: string },
-};
+/***
+ * Extend the Playwright assertions by providing custom matchers. 
+ * These matchers will be available on the expect object.
+ */
+expect.extend({
+    // Custom matcher to check if Contact exists within array of contacts
+    toContainContact(contacts: Contact[], actual: Contact) {
+        const contactExists = contacts.some(contact =>
+            contact.lastname === actual.getLastName() &&
+            contact?.firstname === actual.getFirstName() &&
+            contact?.emailaddress1 === actual.getEmail());
 
-type Navigation = {
-    partialUrl: { form: string; view: string; }
-};
+        if (contactExists) {
+            return {
+                pass: true,
+                message: () => `Found contact: ${actual.getFirstName()} ${actual.getLastName()}`,
 
-type EntityList = {
+            };
+        } else {
+            return {
+                pass: false,
+                message: () => `Expected contact to exist, but did not find: ${actual.getFirstName()} ${actual.getLastName()}`,
+            };
+        }
+    }
+
+});
+
+/**
+ * Represents an entity in the Dataverse.
+ * Add the entity to be set up in the test fixture to this array.  
+ * Then define its structure as a DataverseEntity below.
+ */
+type DataverseEntities = {
     contact: DataverseEntity;
     account: DataverseEntity;
-    product: DataverseEntity
 }
 
 const contact: DataverseEntity = {
@@ -30,12 +53,9 @@ const account: DataverseEntity = {
     fields: {}
 };
 
-const product: DataverseEntity = {
-    logicalName: 'product',
-    logicalCollectionName: 'products',
-    fields: {}
+type PageUrls = {
+    pageType: { form: string; view: string; }
 };
-
 
 /**
  * Extends the test base with access to test helpers.
@@ -51,9 +71,10 @@ const product: DataverseEntity = {
  * });
  * 
  */
-export const entityTest = test.extend<Navigation & EntityList>({
+export const entityTest = test.extend<PageUrls & DataverseEntities>({
 
-    partialUrl: async ({ baseURL }, use) => {
+    // Requires a baseURL value to be set in playwright.config.ts file in project root
+    pageType: async ({ baseURL }, use) => {
         const formUrl = baseURL + '&forceUCI=1&pagetype=entityrecord&etn=';
         const viewUrl = baseURL + '&forceUCI=1&pagetype=entitylist&etn=';
 
@@ -61,37 +82,28 @@ export const entityTest = test.extend<Navigation & EntityList>({
     },
 
     // Define a contact record and set it up for use in the tests
-    contact: async ({ page, partialUrl: url }, use) => {
+    contact: async ({ page, pageType: url }, use) => {
         contact.fields = {
-            firstName: randomizeName('firstname'),
-            lastName: randomizeName('lastname'),
+            firstname: randomizeName('firstname'),
+            lastname: randomizeName('lastname'),
         };
         await useEntity(page, url.form, contact, use);
     },
 
     // Define an account record and set it up for use in the tests
-    account: async ({ page, partialUrl: url }, use) => {
+    account: async ({ page, pageType: url }, use) => {
         account.fields = {
             name: randomizeName('firstname') + 'Account PLC',
         };
         await useEntity(page, url.form, account, use);
     },
-
-    // Define a product record and set it up for use in the tests
-    product: async ({ page, partialUrl: url }, use) => {
-        product.fields = {
-            name: randomizeName('lastname') + 'Account PLC',
-        };
-        await useEntity(page, url.form, product, use);
-    }
-
 });
 
 async function useEntity(page: Page, baseFormUrl: string, entity: DataverseEntity, use: (entity: DataverseEntity) => Promise<void>) {
     const request = new DataverseRequest(page);
     const entityId = await request.post(entity.logicalCollectionName, { data: entity.fields });
-    await page.goto(baseFormUrl + entity.logicalName + '&id=' + entityId);
 
+    await page.goto(baseFormUrl + entity.logicalName + '&id=' + entityId);
     await use(entity);
 
     await request.delete(entity.logicalCollectionName, entityId);
