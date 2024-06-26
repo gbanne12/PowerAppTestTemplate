@@ -1,11 +1,11 @@
 import { randomizeName, getTimestamp } from '../../tests/data/contact-data.js';
-import { Entity, TableName} from './entity.js';
+
 
 /***
  * Structure of the Contact entity in dataverse
  * Only Lastname and a generated contact ID are guaranteed to exist for a contact record
  */
-interface ContactEntity extends Entity {
+interface ContactEntity {
     contactid: string;
     lastname: string;
     firstname?: string;
@@ -19,7 +19,6 @@ interface ContactEntity extends Entity {
  */
 export class Contact implements ContactEntity {
 
-    name: TableName = 'contacts';
     contactid: string;
     firstname: string;
     lastname: string;

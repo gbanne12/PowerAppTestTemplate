@@ -1,27 +1,27 @@
-import test, { Page, expect } from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import { Contact } from '../../dataverse/entities/contact.js';
 import { DataverseRequest } from '../../dataverse/requests/dataverse-request.js';
-import { pageObjectTest } from '../fixtures/test-fixtures.js';
-import { ContactForm } from '../pages/contact-form-page.js';
+import { entityTest } from '../fixtures/test-fixtures.js';
+import { ContactForm } from '../pages/forms/contact-form-page.js';
 import { randomizeName } from '../../tests/data/contact-data.js';
+import { ContactView } from '../pages/views/contact-view-page.js';
 
 
 /*
-* A test using custom 'pageObjectTest' fixture. 
-* In these examples it removes boiler plate code to instantiate the ContactForm page object
+* Tests using the default provbided playwright text fixutre 
 */
-pageObjectTest('Can add a new contact through the UI', async ({ page, contactForm }) => {
+test('Can add a new contact through the UI', async ({ page }) => {
     const contact = new Contact.Builder().buildGenericContact()
-    await contactForm.add(contact);
+    await new ContactForm(page).add(contact);
 
-    const allContacts = await new DataverseRequest().get(page, 'contacts') as Contact[];
-    expect(allContacts).toContainRecord(contact);
+    const allContacts = await new DataverseRequest(page).get('contacts');
+    expect(allContacts.value).toContainContact(contact);
 });
 
-
-pageObjectTest('Can filter contacts shown on a view by keyword', async ({ contactView }) => {
+test('Can filter contacts shown on a view by keyword', async ({ page }) => {
     const searchTerm = 'WhatAUniqueNameToHaveForAContact';
 
+    const contactView = new ContactView(page);
     await contactView.goTo();
     await contactView.filterByKeyword(searchTerm);
 
@@ -29,8 +29,9 @@ pageObjectTest('Can filter contacts shown on a view by keyword', async ({ contac
     expect(result).toBeFalsy();
 });
 
+test('Can update the columns shown on a view', async ({ page }) => {
 
-pageObjectTest('Can update the columns shown on a view', async ({ contactView }) => {
+    const contactView = new ContactView(page);
     await contactView.goTo();
 
     const columnNames = ['Birthday', 'Owner'];
@@ -56,11 +57,13 @@ test('Can validate values on contact record added via the webapi', async ({ page
         lastname: randomizeName('lastname'),
     };
 
-    const recordId = await new DataverseRequest().post(page, 'contacts', { data: contactDetails });
-    new ContactForm(page).goToContactForm(recordId);
+    const recordId = await new DataverseRequest(page).post('contacts', { data: contactDetails });
+    const contactForm = new ContactForm(page);
+    await contactForm.goToContactForm(recordId);
 
-    await expect.soft(page.getByLabel('First Name')).toHaveAttribute('value', contactDetails.firstname);
-    await expect.soft(page.getByLabel('Last Name')).toHaveAttribute('value', contactDetails.firstname);
+
+    expect.soft(await contactForm.getFirstName()).toBe(contactDetails.firstname);  // assertion via page object
+    expect.soft(page.getByLabel('Last Name')).toHaveAttribute('value', contactDetails.lastname);  // assertion by finding field in test
 });
 
 
@@ -71,9 +74,9 @@ test('can update a contact via webapi to be deactivated', async ({ page }) => {
         lastname: randomizeName('lastname'),
     };
 
-    const request = new DataverseRequest();
-    const recordId = await request.post(page, 'contacts', { data: contactDetails });
-    const statusCode = await request.patch(page, 'contacts', recordId, { data: { statecode: '1' } });
+    const request = new DataverseRequest(page);
+    const recordId = await request.post('contacts', { data: contactDetails });
+    const statusCode = await request.patch('contacts', recordId, { data: { statecode: '1' } });
     expect(statusCode).toBe(204);
 
     new ContactForm(page).goToContactForm(recordId);
@@ -87,11 +90,23 @@ test('Can delete a contact row via the webapi', async ({ page }) => {
         lastname: randomizeName('lastname'),
     };
 
-    const request = new DataverseRequest();
-    const recordId = await request.post(page, 'contacts', { data: contactDetails });
-    const statusCode = await request.delete(page, 'contacts', recordId);
+    const request = new DataverseRequest(page);
+    const recordId = await request.post('contacts', { data: contactDetails });
+    const statusCode = await request.delete('contacts', recordId);
     expect(statusCode).toBe(204);
 });
+
+/*
+* A test using the custom 'entityTest' fixture. 
+* In these examples it removes boiler plate code to instantiate the ContactForm page object
+*/
+
+entityTest('Can use the contactTest fixture with Page & Contact param', async ({ contact, page }) => {
+    // the entityTest fixture will load the form after adding the Contact
+    expect(await page.getByLabel('First Name').getAttribute('value')).toBe(contact.fields.firstname);
+    expect(await page.getByLabel('Last Name').getAttribute('value')).toBe(contact.fields.lastname);
+});
+
 
 
 

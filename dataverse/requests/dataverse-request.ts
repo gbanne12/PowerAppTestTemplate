@@ -1,5 +1,15 @@
-import { Page } from "@playwright/test";
+import { APIResponse, Page } from "@playwright/test";
 import { environment } from "../../environment.config.js";
+
+type SingleRecord = { [key: string]: string };
+type RecordsArray = { value: SingleRecord[] };
+type DataverseResponse = SingleRecord | RecordsArray;
+
+export type DataverseEntity = {
+    logicalName: string,
+    logicalCollectionName: string,
+    fields: { [key: string]: string },
+};
 
 export class DataverseRequest {
 
@@ -17,23 +27,36 @@ export class DataverseRequest {
     /**
      * Retrieves data from the specified entity in the Dataverse.
      * @param entity - A value from the {@link EntityLogicalName} type that matches the entity name.
-     * @returns A promise that resolves to an array of records from the specified entity.
+     * @param options - Additional options for the GET request.
+     * @returns A promise that resolves to either an array of records or a single record from the specified entity.
      * @throws An error if the response code is not between 200 - 399 or if the JSON parsing fails.
      */
-    public async get<T>(entity: string): Promise<T[]> {
-        const url = environment.webApiUrl + "/" + entity;
+    public async get<T>(entity: string, options?: {
+        /**
+        * For use in the $select query option to choose which columns to return with your query.  
+        * If you don't include a $select query option, all columns are returned.
+        */
+        select?: string[],
+
+        /**
+         * For selecting a specific record by its ID.
+         */
+        id?: string
+    }
+    ): Promise<SingleRecord | RecordsArray> {
+        // idstring and query string are optional and will be empty if not provided
+        const queryString = options?.select ? `?$select=${options.select.join(',')}` : '';
+        const idString = options?.id ? `(${options.id})` : '';
+        const url = environment.webApiUrl + "/" + entity + idString + queryString;  
+
         const serverResponse = await this.context.request.get(url, { failOnStatusCode: true });
 
-        type jsonStructure = {
-            value: T[]
-        };
-        let json: jsonStructure;
-        try {
-            json = await serverResponse.json();
-        } catch (error) {
-            throw new Error(`Response was ${serverResponse.statusText()}.  Failed to parse json :  ${error}`);
-        }
-        return json.value;
+        // If an ID is provided, return a single record. Otherwise, return an array of records.
+        const isIdPresent = options?.id != undefined;
+        const returnArray = await serverResponse.json();
+        const returnSingleRecord = await this.parseValuesFromJson(serverResponse);
+
+        return isIdPresent ? returnSingleRecord : returnArray;
     }
 
 
@@ -114,6 +137,49 @@ export class DataverseRequest {
 
         const response = await this.context.request.patch(url, { data: patchData, headers: patchHeaders, failOnStatusCode: true });
         return response.status();
+    }
+
+    
+    /**
+     * Initializes a new record in the Dataverse entity by copying the values from an existing record.
+     * @param entity The Dataverse entity to initialize.
+     * @param recordIdentifier The identifier of the existing record to copy values from.
+     * @returns A Promise that resolves to the identifier of the newly created record.
+     */
+    public async initializeFrom(entity: DataverseEntity, recordIdentifier: string): Promise<string> {
+        
+        const validForCreateSuffix = `/EntityDefinitions(LogicalName='${entity.logicalName}')/Attributes?$select=LogicalName&$filter=IsRequiredForForm%20eq%20true&IsValidForCreate%20eq%20true`;
+
+        const apiResponse = await this.context.request.get(environment.webApiUrl + validForCreateSuffix, { failOnStatusCode: true });
+        
+        const validForCreateFields = await this.parseValuesFromJson(apiResponse);
+
+        const logicalNamesArray = validForCreateFields.map(attribute => attribute.LogicalName);
+        const recordToCopy = await this.get(entity.logicalCollectionName, { id: recordIdentifier, select: logicalNamesArray });
+
+        const removePropertyByValue = (response: DataverseResponse, value: string) => {
+            for (const property in response) {
+              if (response[property] === value) {
+                delete response[property];
+                break; // Assuming there is only one property with the specified value
+              }
+            }
+          };
+        removePropertyByValue(recordToCopy, recordIdentifier); // dont submit the existing record ID.
+
+        return await this.post(entity.logicalCollectionName, { data: recordToCopy });
+    }
+
+
+    private async parseValuesFromJson(serverResponse: APIResponse): Promise<Array<SingleRecord>> {
+        let json: RecordsArray;
+        try {
+            json = await serverResponse.json();
+        } catch (error) {
+            throw new Error(`Response was ${serverResponse.statusText()}.  Failed to parse json :  ${error}`);
+        }
+        
+        return json.value;
     }
 
 }
