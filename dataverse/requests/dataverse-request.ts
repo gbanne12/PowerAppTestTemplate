@@ -5,7 +5,7 @@ type SingleRecord = { [key: string]: string };
 type RecordsArray = { value: SingleRecord[] };
 type DataverseResponse = SingleRecord | RecordsArray;
 
-export type DataverseEntity = {
+export type DataverseTable = {
     logicalName: string,
     logicalCollectionName: string,
     fields: { [key: string]: string },
@@ -146,7 +146,7 @@ export class DataverseRequest {
      * @param recordIdentifier The identifier of the existing record to copy values from.
      * @returns A Promise that resolves to the identifier of the newly created record.
      */
-    public async initializeFrom(entity: DataverseEntity, recordIdentifier: string): Promise<string> {
+    public async initializeFrom(entity: DataverseTable, recordIdentifier: string): Promise<string> {
         
         const validForCreateSuffix = `/EntityDefinitions(LogicalName='${entity.logicalName}')/Attributes?$select=LogicalName&$filter=IsRequiredForForm%20eq%20true&IsValidForCreate%20eq%20true`;
 

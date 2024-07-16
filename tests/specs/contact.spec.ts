@@ -8,7 +8,8 @@ import { ContactView } from '../pages/views/contact-view-page.js';
 
 
 /*
-* Tests using the default provbided playwright text fixutre 
+* These tests use the playwright default test fixture
+* The tests interact with the Dataverse API directly to create, update, and delete records
 */
 test('Can add a new contact through the UI', async ({ page }) => {
     const contact = new Contact.Builder().buildGenericContact()
@@ -17,6 +18,7 @@ test('Can add a new contact through the UI', async ({ page }) => {
     const allContacts = await new DataverseRequest(page).get('contacts');
     expect(allContacts.value).toContainContact(contact);
 });
+
 
 test('Can filter contacts shown on a view by keyword', async ({ page }) => {
     const searchTerm = 'WhatAUniqueNameToHaveForAContact';
@@ -29,27 +31,20 @@ test('Can filter contacts shown on a view by keyword', async ({ page }) => {
     expect(result).toBeFalsy();
 });
 
+
 test('Can update the columns shown on a view', async ({ page }) => {
+    const columns = ['Birthday', 'Owner'];
 
     const contactView = new ContactView(page);
     await contactView.goTo();
-
-    const columnNames = ['Birthday', 'Owner'];
-    await contactView.addColumnsToGrid(columnNames);
-
+    await contactView.addColumnsToGrid(columns);
     const headers = await contactView.getGridColumnHeaders();
 
-    const isHeader = (value: string): boolean => {
-        return headers.indexOf(value) !== -1;
-    };
-
-    expect(columnNames.every(isHeader), `Not all column names were found among following:  ${headers.toString}`);
+    const isEachHeadersDisplayed = columns.every(value => headers.indexOf(value) !== -1);
+    expect(isEachHeadersDisplayed, `Every column name not found among following:  ${headers.toString}`);
 });
 
-/*
-* The following tests use the playwright default test fixture
-* The tests interact with the Dataverse API directly to create, update, and delete records
-*/
+
 test('Can validate values on contact record added via the webapi', async ({ page }) => {
     const contactDetails =
     {
@@ -63,7 +58,7 @@ test('Can validate values on contact record added via the webapi', async ({ page
 
 
     expect.soft(await contactForm.getFirstName()).toBe(contactDetails.firstname);  // assertion via page object
-    expect.soft(page.getByLabel('Last Name')).toHaveAttribute('value', contactDetails.lastname);  // assertion by finding field in test
+    expect.soft(page.getByLabel('Last Name').inputValue()).toBe(contactDetails.lastname);  // assertion by finding field in test
 });
 
 
@@ -83,6 +78,7 @@ test('can update a contact via webapi to be deactivated', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Read-only' })).toBeVisible();
 });
 
+
 test('Can delete a contact row via the webapi', async ({ page }) => {
     const contactDetails =
     {
@@ -96,17 +92,14 @@ test('Can delete a contact row via the webapi', async ({ page }) => {
     expect(statusCode).toBe(204);
 });
 
+
 /*
 * A test using the custom 'entityTest' fixture. 
-* In these examples it removes boiler plate code to instantiate the ContactForm page object
+* By adding the contact 
+* In this examples it removes need for the test to add a contact and load the correct page
 */
-
-entityTest('Can use the contactTest fixture with Page & Contact param', async ({ contact, page }) => {
+entityTest('Can use the contactTest fixture with Page & Contact param', async ({ contact, urlPrefix: page }) => {
     // the entityTest fixture will load the form after adding the Contact
     expect(await page.getByLabel('First Name').getAttribute('value')).toBe(contact.fields.firstname);
     expect(await page.getByLabel('Last Name').getAttribute('value')).toBe(contact.fields.lastname);
-});
-
-
-
-
+},);
