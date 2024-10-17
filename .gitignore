@@ -7,5 +7,6 @@
 /playwright/.cache/
 /tests-examples/
 
+config.json
 environment.config.js
 
