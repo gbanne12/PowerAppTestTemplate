@@ -41,9 +41,16 @@ type TableDefinition = {
     account: DataverseTable;
 }
 
-type PageUrl = {
-    urlPrefix: { form: string; view: string; }
-};
+type PowerAppsURL = {
+    url: {   // test fixture name
+        webApiEndpoint: string;
+        application: string;
+        baseForm: string;
+        baseView: string;
+    };
+}
+
+
 
 /**
  * Extends the test base by adding properties the test can access.
@@ -59,20 +66,32 @@ type PageUrl = {
  * });
  * 
  */
-export const entityTest = test.extend<PageUrl & TableDefinition>({
+export const entityTest = test.extend<PowerAppsURL & TableDefinition>({
 
-    // Extend the default test function to include a pageType property for easy access of URLs
+    url: async ({ baseURL, page }, use) => {
+        const webApiEndpoint = baseURL + '/api/data/v9.2/';
+        const application = baseURL + '/main.aspx?appid=3867134f-9a92-ed11-aad1-000d3adf7bf1';
+        const baseForm = application + '&pagetype=entityrecord&etn=';
+        const baseView = application + '&pagetype=entitylist&etn=';
+
+        await use({ webApiEndpoint, application, baseForm, baseView })
+
+        page.close()
+    },
+
+
+    /* // Extend the default test function to include a pageType property for easy access of URLs
     // Requires a baseURL value to be set in playwright.config.ts file in project root
     urlPrefix: async ({ baseURL }, use) => {
         const formUrl = baseURL + '&forceUCI=1&pagetype=entityrecord&etn=';
         const viewUrl = baseURL + '&forceUCI=1&pagetype=entitylist&etn=';
 
         await use({ form: formUrl, view: viewUrl });
-    },
+    }, */
 
 
     // Adds a contact with a first and last name to dataverse then opens the record for use in the test
-    contact: async ({ page, urlPrefix }, use) => {
+    contact: async ({ page, url }, use) => {
         const contact: DataverseTable = {
             logicalName: 'contact',
             logicalCollectionName: 'contacts',
@@ -81,12 +100,14 @@ export const entityTest = test.extend<PageUrl & TableDefinition>({
                 lastname: randomizeName('lastname'),
             }
         };
-        await useEntity(page, urlPrefix.form, contact, use);
+
+        await useEntity(page, url.baseForm, contact, use);
+
+        page.close();
     },
 
     // Adds an account with a name value to dataverse then opens the record for use in the test
-    account: async ({page, urlPrefix }, use) => {
-
+    account: async ({ page, url }, use) => {
         const account: DataverseTable = {
             logicalName: 'account',
             logicalCollectionName: 'accounts',
@@ -94,7 +115,10 @@ export const entityTest = test.extend<PageUrl & TableDefinition>({
                 name: randomizeName('firstname') + 'Account PLC',
             }
         };
-        await useEntity(page, urlPrefix.form, account, use);
+
+        await useEntity(page, url.baseForm, account, use);
+
+        page.close();
     },
 });
 

@@ -1,5 +1,5 @@
 import { APIResponse, Page } from "@playwright/test";
-import { environment } from "../../environment.config.js";
+import config from '../../playwright.config';
 
 type SingleRecord = { [key: string]: string };
 type RecordsArray = { value: SingleRecord[] };
@@ -10,6 +10,8 @@ export type DataverseTable = {
     logicalCollectionName: string,
     fields: { [key: string]: string },
 };
+
+const webApiUrl = config.use.baseURL + '/api/data/v9.2/';
 
 export class DataverseRequest {
 
@@ -47,7 +49,7 @@ export class DataverseRequest {
         // idstring and query string are optional and will be empty if not provided
         const queryString = options?.select ? `?$select=${options.select.join(',')}` : '';
         const idString = options?.id ? `(${options.id})` : '';
-        const url = environment.webApiUrl + "/" + entity + idString + queryString;  
+        const url = webApiUrl + "/" + entity + idString + queryString;  
 
         const serverResponse = await this.context.request.get(url, { failOnStatusCode: true });
 
@@ -83,7 +85,7 @@ export class DataverseRequest {
          */
         headers?: { [key: string]: string; }
     }): Promise<string> {
-        const url = environment.webApiUrl + "/" + entity;
+        const url = webApiUrl + "/" + entity;
         const response = await this.context.request.post(url, { data: options?.data, headers: options?.headers, failOnStatusCode: true });
 
         let odataId: string;
@@ -113,7 +115,7 @@ export class DataverseRequest {
      * @throws An error if the response code is not between 200 - 399.
      */
     public async delete(entity: string, id: string): Promise<number> {
-        const url = environment.webApiUrl + "/" + entity + `(${id})`;
+        const url = webApiUrl + "/" + entity + `(${id})`;
         const response = await this.context.request.delete(url, { failOnStatusCode: true });
         return response.status();
     }
@@ -130,7 +132,7 @@ export class DataverseRequest {
         data: any,
         headers?: { [key: string]: string; }
     }): Promise<number> {
-        const url = environment.webApiUrl + "/" + entity + `(${id})`;
+        const url = webApiUrl + "/" + entity + `(${id})`;
         const patchData = options.data;
         const patchHeaders: { [key: string]: string; } = options.headers || {};
         patchHeaders["If-Match"] = "*";
@@ -150,7 +152,7 @@ export class DataverseRequest {
         
         const validForCreateSuffix = `/EntityDefinitions(LogicalName='${entity.logicalName}')/Attributes?$select=LogicalName&$filter=IsRequiredForForm%20eq%20true&IsValidForCreate%20eq%20true`;
 
-        const apiResponse = await this.context.request.get(environment.webApiUrl + validForCreateSuffix, { failOnStatusCode: true });
+        const apiResponse = await this.context.request.get(webApiUrl + validForCreateSuffix, { failOnStatusCode: true });
         
         const validForCreateFields = await this.parseValuesFromJson(apiResponse);
 
@@ -178,7 +180,6 @@ export class DataverseRequest {
         } catch (error) {
             throw new Error(`Response was ${serverResponse.statusText()}.  Failed to parse json :  ${error}`);
         }
-        
         return json.value;
     }
 
