@@ -52,7 +52,7 @@ export class BaseViewPage {
         for (let columnName of columnNames) {
             await this.columnSearchInput.click();
             await this.columnSearchInput.fill(columnName);
-            await this.page.getByRole('option', {name: columnName}).click();
+            await this.page.getByRole('option', { name: columnName }).click();
         }
 
         await this.addColumnsCloseButton.click();
@@ -60,11 +60,12 @@ export class BaseViewPage {
     }
 
     async getGridColumnHeaders(): Promise<string[]> {
-        const headers = this.resultsGrid
+        return this.page
+            .getByRole('rowgroup')  
             .getByRole('columnheader')
-            .filter({ hasNot: this.resultsGrid.getByRole("checkbox") });
-
-        return headers.allInnerTexts();
+            .getByRole('button')
+            .getByRole('none')  //excludes the tooltip value
+            .allInnerTexts()
     }
 
     /**

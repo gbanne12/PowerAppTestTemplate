@@ -13,7 +13,7 @@ export type DataverseTable = {
 
 const webApiUrl = config.use.baseURL + '/api/data/v9.2/';
 
-export class DataverseRequest {
+export class WebApiRequest {
 
     private context: Page;
 

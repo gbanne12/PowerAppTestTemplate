@@ -1,6 +1,6 @@
-import { Page, expect, test } from '@playwright/test';
+import { Page, expect, test as baseTest } from '@playwright/test';
 import { randomizeName } from '../data/contact-data.js';
-import { DataverseRequest, DataverseTable } from '../../dataverse/requests/dataverse-request.js';
+import { WebApiRequest } from '../../dataverse/requests/webapi-request.js';
 import { Contact } from '../../dataverse/entities/contact.js';
 
 /***
@@ -36,13 +36,18 @@ expect.extend({
  * Add the table the test fixture will set up data for as a property here.  
  * Then define its structure including fields in the test fixture below.
  */
-type TableDefinition = {
-    contact: DataverseTable;
-    account: DataverseTable;
+
+type Dataverse = {
+    contact: Table;
+    account: Table;
+}
+
+type Table = {
+    columns: { [key: string]: string },
 }
 
 type PowerAppsURL = {
-    url: {   // test fixture name
+    url: {
         webApiEndpoint: string;
         application: string;
         baseForm: string;
@@ -50,23 +55,19 @@ type PowerAppsURL = {
     };
 }
 
+type HttpRequest = {
+    webApi: WebApiRequest
+}
 
 
 /**
- * Extends the test base by adding properties the test can access.
- * 
- * This custom fixture provides a way to create and use entities in the Dataverse.
- * To extend for a new entity, add a new property to the array above 
- * and create a DataverseEntity type with the required fields to be added as part of the record.
- * 
- *  **Example Usage**
- * 
- * entityTest('Can use the account setup by the test fixture', async ({ page, account}) => {
- *   expect(await page.getByLabel('Account Name').getAttribute('value')).toBe(account.fields.name);
- * });
- * 
+ * Extends the test base by adding properties the test can access. 
+ * - url  for navigating to pages in the model driven app
+ * - webApiRequest  for making https requests to dataverse
+ * - contact  for creating and then opening a contact record in the app
+ * - account  for creating and then opening an account record in the app
  */
-export const entityTest = test.extend<PowerAppsURL & TableDefinition>({
+export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
 
     url: async ({ baseURL, page }, use) => {
         const webApiEndpoint = baseURL + '/api/data/v9.2/';
@@ -76,70 +77,42 @@ export const entityTest = test.extend<PowerAppsURL & TableDefinition>({
 
         await use({ webApiEndpoint, application, baseForm, baseView })
 
-        page.close()
+        await page.close()
     },
 
-
-    /* // Extend the default test function to include a pageType property for easy access of URLs
-    // Requires a baseURL value to be set in playwright.config.ts file in project root
-    urlPrefix: async ({ baseURL }, use) => {
-        const formUrl = baseURL + '&forceUCI=1&pagetype=entityrecord&etn=';
-        const viewUrl = baseURL + '&forceUCI=1&pagetype=entitylist&etn=';
-
-        await use({ form: formUrl, view: viewUrl });
-    }, */
-
+    webApi: async ({ page }, use) => {
+        const webApiRequest = new WebApiRequest(page);
+        await use(webApiRequest);
+        await page.close();
+    },
 
     // Adds a contact with a first and last name to dataverse then opens the record for use in the test
-    contact: async ({ page, url }, use) => {
-        const contact: DataverseTable = {
-            logicalName: 'contact',
-            logicalCollectionName: 'contacts',
-            fields: {
-                firstname: randomizeName('firstname'),
-                lastname: randomizeName('lastname'),
-            }
-        };
+    contact: async ({ page, webApi: webApiRequest, url }, use) => {
+        const tableName = 'contacts';
+        const columns = {
+            firstname: randomizeName('firstname'),
+            lastname: randomizeName('lastname'),
+        }
+        const recordId = await webApiRequest.post(tableName, { data: columns });
+        await page.goto(`${url.baseForm}contact&id=${recordId}`);
+        await use({ columns });
 
-        await useEntity(page, url.baseForm, contact, use);
-
-        page.close();
+        await webApiRequest.delete(tableName, recordId);
+        await page.close();
     },
 
     // Adds an account with a name value to dataverse then opens the record for use in the test
-    account: async ({ page, url }, use) => {
-        const account: DataverseTable = {
-            logicalName: 'account',
-            logicalCollectionName: 'accounts',
-            fields: {
-                name: randomizeName('firstname') + 'Account PLC',
-            }
-        };
+    account: async ({ page, url, webApi: webApiRequest }, use) => {
+        const tableName = 'accounts';
+        const columns = {
+            name: randomizeName('lastname') + 'PLC',
+        }
+        const recordId = await webApiRequest.post(tableName, { data: columns });
+        await page.goto(`${url.baseForm}account&id=${recordId}`);
+        await use({ columns });
 
-        await useEntity(page, url.baseForm, account, use);
-
-        page.close();
+        await webApiRequest.delete(tableName, recordId);
+        await page.close();
     },
 });
-
-
-/**
- * Retrieves data from the specified entity in the Dataverse.
- * @param page - the existing playwright page fixture 
- * @param baseFormUrl - the base url for all forms (the function will add the entity name and record ID itself)
- * @param table - the entity/table to be set up for use in the test
- * @parm performTest - the actions defined in the test script
- * @returns A promise that resolves to either an array of records or a single record from the specified entity.
-*/
-async function useEntity(page: Page, baseFormUrl: string, table: DataverseTable, testActions: (table: DataverseTable) => Promise<void>) {
-    const request = new DataverseRequest(page);
-    const entityId = await request.post(table.logicalCollectionName, { data: table.fields });
-
-    await page.goto(baseFormUrl + table.logicalName + '&id=' + entityId);
-    await testActions(table);
-
-    await request.delete(table.logicalCollectionName, entityId);
-    page.close();
-}
-
 

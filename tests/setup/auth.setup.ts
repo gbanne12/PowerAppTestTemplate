@@ -1,4 +1,4 @@
-import { entityTest as setup } from '../fixtures/test-fixtures';
+import { test } from '../fixtures/test-fixtures';
 import { LoginPage } from '../pages/login-page.js';
 import config from '../../environment.config'
 
@@ -13,7 +13,7 @@ The 'setup' project will be run first and will be used by the other projects as 
 
 https://playwright.dev/docs/auth
 */
-setup('Authenticate and save the authenticated state for reuse', async ({ page, url }) => {
+test('Authenticate and save the authenticated state for reuse', async ({ page, url }) => {
   await page.goto(url.application);
   const login = new LoginPage(page);
   await login.withCredentials(config.username, config.password, config.secret);
