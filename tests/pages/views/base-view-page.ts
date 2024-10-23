@@ -68,7 +68,7 @@ export class BaseViewPage {
 
 
         await columnHeaders.last().waitFor({ state: 'visible' });
-        return await columnHeaders.allTextContents();
+        return await columnHeaders.allInnerTexts();
     }
 
     /**
@@ -92,29 +92,26 @@ export class BaseViewPage {
         await this.searchInput.click();
         await this.searchInput.fill(keywords);
         await this.searchInput.press('Enter');
+
+        // allow refresh of grid
+        await this.resultsGrid.waitFor({ state: 'hidden' });
+        await this.resultsGrid.waitFor({ state: 'visible' });
     }
 
     /**
-     * Checks if the result grid contains a specific value.
+     * Get the inner text (i.e. displayed text) from cells shown in the result grid.
      *
-     *  @param value - The value to search for in the result grid.
      * @param options - Optional parameters for the search.  
      * If column header is not provided, the search will be performed on all columns.
-     * If exact is not provided, the search will return true for any cell that contains the value.
-     * @returns A promise that resolves to a boolean indicating whether the value was found in the result grid.
+     * @returns A promise that resolves to an array of innertext values of the cells.
      */
-    async resultGridContains(value: string, options?: { columnHeader?: string; exact?: boolean; }): Promise<boolean> {
-        const searchOptions: { columnHeader?: string; exact?: boolean; } = options || {};
-        searchOptions.exact ??= false;
+    async getCellsText(options?: { columnHeader?: string; }): Promise<Array<string>> {
+        const searchOptions: { columnHeader?: string } = options || {};
 
+        let gridCells;
         if (searchOptions.columnHeader == undefined) {
             // search all columns
-            const gridCells = this.resultsGrid.getByRole('gridcell');
-
-            if (await gridCells.count() == 0) {
-                return false;
-            }
-            return await this.isValueInCells(value, gridCells, searchOptions.exact);
+            gridCells = await this.resultsGrid.getByRole('gridcell').allInnerTexts();
 
         } else {
             // search specific column
@@ -124,27 +121,10 @@ export class BaseViewPage {
 
             const cellsInColumn = this.resultsGrid
                 .locator(`[role="gridcell"][aria-colindex="${columnIndexToSearch}"]`);
-
-            if (await cellsInColumn.count() == 0) {
-                return false
-            }
-            return await this.isValueInCells(value, cellsInColumn, searchOptions.exact);
+            gridCells = await cellsInColumn.allInnerTexts();
         }
+
+        return gridCells;
     }
-
-    private async isValueInCells(value: string, cells: Locator, exact: boolean): Promise<boolean> {
-        for (let cell of await cells.all()) {
-            const cellText = await cell.innerText();
-
-            if (exact == false && cellText.includes(value)) {
-                return true;
-
-            } else if (exact == true && cellText === value) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
 
