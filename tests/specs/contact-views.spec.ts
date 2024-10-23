@@ -1,10 +1,11 @@
-import { expect } from '@playwright/test';
+
 import { Contact } from '../../dataverse/entities/contact.js';
 import { WebApiRequest } from '../../dataverse/requests/webapi-request.js';
 import { ContactForm } from '../pages/forms/contact-form-page.js';
 import { randomizeName } from '../data/contact-data.js';
 import { BaseViewPage } from '../pages/views/base-view-page.js';
 import { test } from '../fixtures/test-fixtures.js';
+import { expect } from '@playwright/test';
 
 
 /*
@@ -28,12 +29,12 @@ test('Can filter contacts shown on a view by keyword', async ({ page, url, conta
 test('Can update the columns shown on a view', async ({ page, url }) => {
     await page.goto(url.baseView + 'contact');
 
-    const newColumns = ['Birthday', 'Owner'];
+    const expectedColumns = ['Birthday', 'Owner'];
     const viewPage = new BaseViewPage(page);
-    await viewPage.addColumnsToGrid(newColumns);
+    await viewPage.addColumnsToGrid(expectedColumns);
 
     const actualColumns = await viewPage.getGridColumnHeaders();
 
-    expect(newColumns.every(name => actualColumns.includes(name)))
+    expect(actualColumns).toEqual(expect.arrayContaining(expectedColumns));
 });
 

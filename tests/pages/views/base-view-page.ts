@@ -60,12 +60,15 @@ export class BaseViewPage {
     }
 
     async getGridColumnHeaders(): Promise<string[]> {
-        return this.page
-            .getByRole('rowgroup')  
+        const columnHeaders = this.page
+            .getByRole('rowgroup')
             .getByRole('columnheader')
             .getByRole('button')
-            .getByRole('none')  //excludes the tooltip value
-            .allInnerTexts()
+            .getByRole('none');
+
+
+        await columnHeaders.last().waitFor({ state: 'visible' });
+        return await columnHeaders.allTextContents();
     }
 
     /**
