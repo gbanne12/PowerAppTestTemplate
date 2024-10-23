@@ -1,6 +1,6 @@
 import { test } from '../fixtures/test-fixtures';
 import { LoginPage } from '../pages/login-page.js';
-import config from '../../environment.config'
+import config from '../../powerplatform.config'
 
 const authFile = 'playwright/.auth/user.json';
 /*

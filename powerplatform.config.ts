@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 
-export interface PowerPlatformEnvConfig {
+export interface PowerPlatformConfig {
     username: string;
     password: string;
     secret: string;
@@ -11,10 +11,10 @@ export interface PowerPlatformEnvConfig {
 }
 
 // Load credentials from config.json if it exists, otherwise load from environment variables.
-function envConfig(): PowerPlatformEnvConfig {
+function defineConfig(): PowerPlatformConfig {
     const configPath = path.resolve(process.cwd(), 'config.json');
 
-    let config: PowerPlatformEnvConfig;
+    let config: PowerPlatformConfig;
     if (fs.existsSync(configPath)) {
         console.log('Loading credentials from config.json');
         const configFile = fs.readFileSync(configPath, 'utf8');
@@ -32,4 +32,4 @@ function envConfig(): PowerPlatformEnvConfig {
     return config;
 }
 
-export default envConfig();
+export default defineConfig();
