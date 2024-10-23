@@ -2,6 +2,7 @@ import { Page, expect, test as baseTest } from '@playwright/test';
 import { randomizeName } from '../data/contact-data.js';
 import { WebApiRequest } from '../../dataverse/requests/webapi-request.js';
 import { Contact } from '../../dataverse/entities/contact.js';
+import config from '../../powerplatform.config.js';
 
 /***
  * Extend the Playwright assertions by providing custom matchers. 
@@ -68,6 +69,29 @@ type HttpRequest = {
  * - account  for creating and then opening an account record in the app
  */
 export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
+
+    page: async ({ page }, use) => {
+        // Modify the goTo function to dismiss the copilot pane that will display on direct url navigation
+        const goto = page.goto.bind(page);
+
+        async function modifiedGoto(url: string, options?: { referer?: string; timeout?: number; waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit" }) {
+            const response = await goto(url, options);
+            const isLoginPage = page.url().toLowerCase().includes("login.microsoftonline.com");
+            if (!isLoginPage) {
+                const copilotInput = page.getByPlaceholder("Ask a question about the data in the app. Use / to reference data");
+                await copilotInput.waitFor({ state: "visible", timeout: 60000 });
+                await page.getByRole('tab', { name: 'Copilot' }).click();
+            }
+
+            return response;
+        };
+
+        page.goto = config.copilotEnabled ? modifiedGoto : goto;
+        await use(page);
+
+        await page.close();
+
+    },
 
     url: async ({ baseURL, page }, use) => {
         const webApiEndpoint = baseURL + '/api/data/v9.2/';
