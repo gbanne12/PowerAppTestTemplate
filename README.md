@@ -9,13 +9,13 @@
 # Overview
 Example project for testing a dynamics 365 model driven app.
 
-## environment-config.ts
-The environment-config.ts file in the project root needs to be populated with the following details for the test(s) to run:
- - webApiUrl: The base url fror making requests to dataverse
- - appUrl: The url for accessing the application directly i.e. include appid and relevant guid
- - email: The username for accessing the aplication
+## Config
+The following values can be added as either environment variables or directly in a a config.json file in the project root:
+ - appId: The application id for accessing the app url directly
+ - username: The email address for accessing the aplication
  - password: The coresponding password for the above username
  - secret: The client secret from the above user's MFA device. Can be obtained during setup of the MFA device. See https://github.com/microsoft/EasyRepro?tab=readme-ov-file#mfa-support
+ - copilotEnabled - true if the copilot pane is enabled in the app, false if not
 
 
 ## Running the tests
