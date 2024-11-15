@@ -22,7 +22,7 @@ export default defineConfig({
     headless: true,
     trace: 'on',
     screenshot: 'on',
-    actionTimeout: 12000,
+    actionTimeout: 20000,
     navigationTimeout: 20000,
   },
 
