@@ -6,18 +6,22 @@ import { expect, defineConfig, devices, PlaywrightTestConfig } from '@playwright
  */
 export default defineConfig({
   outputDir: 'test-results',
-  timeout: 10 * 60 * 1000, //total time test is allowed to run
-  fullyParallel: false,
-  workers: 1,
+  timeout: 10 * 60 * 1000, // total time allowed for test tun
+  fullyParallel: true,
+  workers: process.env.CI ? 1 : undefined,
 
   reporter: [
+    ['html'],
+    ['list'],
+    ['line'],
     ['junit', { outputFile: 'test-results/e2e-junit-results.xml' }]
   ],
 
   use: {
     baseURL: 'https://org9e533c5d.crm4.dynamics.com',
-    headless: false,
-    screenshot: 'only-on-failure',
+    headless: true,
+    trace: 'on',
+    screenshot: 'on',
     actionTimeout: 12000,
     navigationTimeout: 20000,
   },
