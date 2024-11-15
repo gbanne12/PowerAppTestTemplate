@@ -4,45 +4,36 @@ trigger:
   - main
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 variables:
-  - group: playwright-credentials
+  - group: PowerAppConfig
 
 steps:
-  - script: |
-      echo export const environment = { > $(Build.SourcesDirectory)/environment.config.ts
-      echo     password: $(password), >> $(Build.SourcesDirectory)/environment.config.ts
-      echo     email: $(username), >> $(Build.SourcesDirectory)/environment.config.ts
-      echo     secret: $(secret), >> $(Build.SourcesDirectory)/environment.config.ts
-      echo     appUrl: $(appUrl), >> $(Build.SourcesDirectory)/environment.config.ts
-      echo     webApiUrl: $(webApiUrl), >> $(Build.SourcesDirectory)/environment.config.ts
-      echo }; >> $(Build.SourcesDirectory)/environment.config.ts
-    displayName: "Write credentials to $(Build.SourcesDirectory)/environment.config.ts"
-
-  - script: |
-      ls $(Build.SourcesDirectory)
-    displayName: 'List files in directory'
-
-  - powershell: |
-      Get-Content $(Build.SourcesDirectory)/environment.config.ts
-    displayName: 'Print File Contents'
-
   - task: NodeTool@0
     inputs:
-      versionSpec: "18"
+      versionSpec: "20.x"
     displayName: "Install Node.js"
 
   - script: npm ci
-    displayName: "npm ci"
+    displayName: "npm clean install"
 
   - script: npx playwright install --with-deps
-    displayName: "Install Playwright browsers"
+    displayName: "Install Playwright and browsers"
+
+  - script: export USERNAME=$(USERNAME) PASSWORD=$(PASSWORD) SECRET=$(SECRET) APP_ID=$(APP_ID) COPILOT_ENABLED=$(COPILOT_ENABLED)   #variables added to DevOps at Pipelines > Library with above variable group name 
+    displayName: "Export environment variables for use in the test"
 
   - script: npx playwright test --project=Chrome
-    displayName: "Run Playwright tests"
+    displayName: "Run the main test project"
     env:
       CI: "true"
+      USERNAME: $(USERNAME)
+      PASSWORD: $(PASSWORD)
+      SECRET: $(SECRET)
+      APP_ID: $(APP_ID)
+      COPILOT_ENABLED: $(COPILOT_ENABLED)
+
 
   - task: PublishTestResults@2
     displayName: "Publish test results"
@@ -52,7 +43,7 @@ steps:
       testResultsFiles: "e2e-junit-results.xml"
       mergeTestResults: true
       failTaskOnFailedTests: true
-      testRunTitle: "My End-To-End Tests"
+      testRunTitle: "All tests"
     condition: succeededOrFailed()
 
   - task: PublishPipelineArtifact@1
