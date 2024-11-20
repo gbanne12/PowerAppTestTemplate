@@ -1,4 +1,5 @@
 import { expect, defineConfig, devices, PlaywrightTestConfig } from '@playwright/test';
+import { open } from 'fs';
 
 /**
  * Define the config for the tests
@@ -11,9 +12,8 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   reporter: [
-    ['html'],
+    ['html', { open: 'on-failure' }],
     ['list'],
-    ['line'],
     ['junit', { outputFile: 'test-results/e2e-junit-results.xml' }]
   ],
 
@@ -28,7 +28,7 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'setup',        // Setup project logs in to dynamics and stores the session info
+      name: 'authenticate',        // Setup project logs in to dynamics and stores the session info
       testMatch: /setup\.ts/,
       use: {
         ...devices['Desktop Chrome'],
@@ -37,19 +37,16 @@ export default defineConfig({
     },
 
     {
-      name: 'Chrome Logged In',      // Logged-in project assumes the user already has an authenticated session 
+      name: 'quick-run',      // Logged-in project assumes the user already has an authenticated session 
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
         storageState: 'playwright/.auth/user.json',
-        launchOptions: {
-          args: ["--start-maximized"]
-        },
       },
     },
 
     {
-      name: 'Chrome',     // Main project runs tests in chrome and depends on setup project to log in for the tests
+      name: 'full-run',     // Main project runs tests in chrome and depends on setup project to log in for the tests
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',

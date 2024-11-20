@@ -14,8 +14,8 @@ export abstract class EntityForm {
     constructor(page: Page) {
         this.page = page;
 
-        this.saveButton = page.getByRole('menuitem', { name: 'Save (CTRL+S)' })
-        this.saveStatus = page.getByLabel('Save status - Saved');;
+        this.saveButton = page.getByRole('menuitem', { name: 'Save (CTRL+S)' });
+        this.saveStatus = page.getByLabel('Save status - Saved');
     }
 
 
