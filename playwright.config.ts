@@ -52,7 +52,7 @@ export default defineConfig({
         channel: 'chrome',
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
+      dependencies: ['authenticate'],
     },
 
   ],
