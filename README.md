@@ -7,14 +7,20 @@
     - [Running on a pipeline](#running-on-a-pipeline)
     - [Reporting](#reporting)
     - [Projects](#projects)
+
 - [Playwright & Model Driven App](#using-playwright-with-a-model-driven-app)
     - [Test Setup](#test-setup)
     - [Locating Elements](#locating-elements)
+    - [Using GoTo](#using-goto)
+    - [Copilot pane](#copilot-pane)
     - [Test Generator](#codegen)
+    - [Trace](#trace)
 
 
 # Using the project
-Example project for testing a dynamics 365 model driven app using Playwright.
+Example project for testing a Model Driven App created using Microsoft Power Apps. 
+
+The example tests show an approach to testing the Contact table form and views.
 
 ## Config
 For the tests to run, the following details for the application need to be provided.  
@@ -90,6 +96,7 @@ Combining this functionality with the ability to store authenticated browser sta
 To run the **full-run** project using the following command
 ```npx playwright --project=full-run```
 
+
 # Using Playwright with a Model Driven App
 
 
@@ -124,11 +131,11 @@ export const contactTest = test.extend<Contact>({
         }
         await page.request.post(baseURL + 'api/data/v9.2/contacts', {data: columnData})
         
-        //The test runs at this point, now with the column data available as a parameter
+        //The test runs at this point, with the column data available as a parameter
         await use(columnData)
 
-		     // This will be executed after the test run
-		     page.close()	 
+		// This is executed after the test run
+		page.close()	 
     }
 });
 ```
@@ -252,10 +259,27 @@ await page.getByLabel('ADDRESS').scrollIntoViewIfNeeded();
 await page.getByLabel('Address 1: ZIP/Postal Code').fill("G1 1AA");
 ``` 
 
+## Using GoTo
+Playwright is designed to wait for a page load to finish before executing the next command in the test.
+
+Navigating to a specific 'page' in a model driven app by providing a url to the ```page.goTo()``` method results in a load which will be deemed finished by Playwright before the content is fully loaded.   
+
+As such it will be necessary to wait for certain elements to be visible before proceeding. This could be the element to be interacted with or a generic element that indicates the content is loaded.  
+
+```typescript
+await page.goTo(accountFormUrl);
+const accountName = await page.getByLabel("Account Name");
+await accountName.waitFor({ state: "visible", timeout: 30000 });
+await accountName.fill("Microsoft");
+```
+
+## Copilot Pane
+When copilot is enabled the copilot pane is automatically opened following login to the app and whenever the ```page.goTo()``` method above is called.  The pane is opened after all the page content is loaded and can interfere with the test run and needs to be closed. 
+
+This project shows an example of how to do so by updating the page.goTo() method to wait for and close the pane.  This is done as part of the test fixture at ```tests/fixtures/test-fixtures.ts```. 
 
 
-
-## Codegen
+## Test Generator
 
 Codegen is the name given to playwright's click and record functionality that will generate the Playwright commands that replicate the recorded actions.
 
@@ -273,7 +297,13 @@ To save the storage state use:
 Once saved, the authenticated state can be reused in a later run:
 ```playwright codegen  --load-storage=auth.json```
 
+## Trace
+Playwright allows recording a trace of a test to aid debugging and can be configured in the **use** section of the ```playwright.config.ts``` file.  
+https://playwright.dev/docs/trace-viewer
 
+It is currently enabled to be recorded on the first retry on a failed test but can be set to always. 
+
+It can be useful for debugging a failure on a CI run and can be downloaded from an Azure DevOps run by going to the Pipeline results page selecting the ```tests``` tab, selelcting a test and then viewing attachments. .
 
 
 

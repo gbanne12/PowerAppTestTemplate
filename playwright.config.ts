@@ -10,6 +10,7 @@ export default defineConfig({
   timeout: 10 * 60 * 1000, // total time allowed for test tun
   fullyParallel: true,
   workers: process.env.CI ? 1 : undefined,
+  retries: 1,
 
   reporter: [
     ['html', { open: 'on-failure' }],
@@ -20,7 +21,7 @@ export default defineConfig({
   use: {
     baseURL: 'https://org9e533c5d.crm4.dynamics.com',
     headless: true,
-    trace: 'on',
+    trace: 'on-first-retry',
     screenshot: 'on',
     actionTimeout: 20000,
     navigationTimeout: 20000,
