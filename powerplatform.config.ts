@@ -26,7 +26,7 @@ function defineConfig(): PowerPlatformConfig {
             password: process.env.PASSWORD || '',
             secret: process.env.SECRET || '',
             appId: process.env.APP_ID || '',
-            copilotEnabled: process.env.COPILOT_ENABLED === 'false',
+            copilotEnabled: process.env.COPILOT_ENABLED === 'true',
         };
     }
     return config;
