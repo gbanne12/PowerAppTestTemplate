@@ -16,7 +16,12 @@ https://playwright.dev/docs/auth
 test('Authenticate and save the authenticated state for reuse', async ({ page, url }) => {
   await page.goto(url.application);
   const login = new LoginPage(page);
-  await login.withCredentials(config.username, config.password, config.secret);
+
+  const credentials = config.secret
+    ? { username: config.username, password: config.password, secret: config.secret }
+    : { username: config.username, password: config.password };
+
+  await login.withCredentials(credentials);
   await page.context().storageState({ path: authFile });
   await page.close();
 });

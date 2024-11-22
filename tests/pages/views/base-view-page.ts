@@ -95,7 +95,7 @@ export class BaseViewPage {
 
         // allow refresh of grid
         await this.resultsGrid.waitFor({ state: 'hidden' });
-        await this.resultsGrid.waitFor({ state: 'visible' });
+        await this.page.getByRole("row").first().waitFor({ state: 'visible' });
     }
 
     /**
@@ -119,8 +119,7 @@ export class BaseViewPage {
                 .getByRole('columnheader', { name: searchOptions.columnHeader })
                 .getAttribute('aria-colindex');
 
-            const cellsInColumn = this.resultsGrid
-                .locator(`[role="gridcell"][aria-colindex="${columnIndexToSearch}"]`);
+            const cellsInColumn = this.page.locator(`[role="gridcell"][aria-colindex="${columnIndexToSearch}"]`);
             gridCells = await cellsInColumn.allInnerTexts();
         }
 

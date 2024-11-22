@@ -33,18 +33,19 @@ expect.extend({
 });
 
 /**
- * Tables contained in Dataverse.
- * Add the table the test fixture will set up data for as a property here.  
- * Then define its structure including fields in the test fixture below.
+ * Define the types that will be available to the extended test function. 
+ * 
+ * Addition tables can be added to the DataverseTable object as required.  
+ * The columns for the table canbe defined in the test fixture itself.
  */
-
-type Dataverse = {
-    contact: Table;
-    account: Table;
+type WebApi = {
+    webApi: WebApiRequest
 }
 
-type Table = {
-    columns: { [key: string]: string },
+type Table = { columns: { [key: string]: string } }
+type DataverseTable = {
+    contact: Table;
+    account: Table;
 }
 
 type PowerAppsURL = {
@@ -56,24 +57,17 @@ type PowerAppsURL = {
     };
 }
 
-type HttpRequest = {
-    webApi: WebApiRequest
-}
+type TestHelpers = WebApi & PowerAppsURL & DataverseTable;
 
 
 /**
  * Extends the test base by adding properties the test can access. 
- * - url  for navigating to pages in the model driven app
- * - webApiRequest  for making https requests to dataverse
- * - contact  for creating and then opening a contact record in the app
- * - account  for creating and then opening an account record in the app
  */
-export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
+export const test = baseTest.extend<TestHelpers>({
 
+    // Modify the goTo function to dismiss the copilot pane that will display on direct url navigation
     page: async ({ page }, use) => {
-        // Modify the goTo function to dismiss the copilot pane that will display on direct url navigation
         const goto = page.goto.bind(page);
-
         async function modifiedGoto(url: string, options?: { referer?: string; timeout?: number; waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit" }) {
             const response = await goto(url, options);
             const isLoginPage = page.url().toLowerCase().includes("login.microsoftonline.com");
@@ -82,7 +76,6 @@ export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
                 await copilotInput.waitFor({ state: "visible", timeout: 60000 });
                 await page.getByRole('tab', { name: 'Copilot' }).click();
             }
-
             return response;
         };
 
@@ -90,9 +83,9 @@ export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
         await use(page);
 
         await page.close();
-
     },
 
+    // Make common URLs available to the tests
     url: async ({ baseURL, page }, use) => {
         const webApiEndpoint = baseURL + '/api/data/v9.2/';
         const application = baseURL + '/main.aspx?appid=3867134f-9a92-ed11-aad1-000d3adf7bf1';
@@ -104,6 +97,7 @@ export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
         await page.close()
     },
 
+    // Allow the WebApi request class to be used without instantiating (similar to page)
     webApi: async ({ page }, use) => {
         const webApiRequest = new WebApiRequest(page);
         await use(webApiRequest);
@@ -111,31 +105,31 @@ export const test = baseTest.extend<HttpRequest & PowerAppsURL & Dataverse>({
     },
 
     // Adds a contact with a first and last name to dataverse then opens the record for use in the test
-    contact: async ({ page, webApi: webApiRequest, url }, use) => {
+    contact: async ({ page, webApi, url }, use) => {
         const tableName = 'contacts';
         const columns = {
             firstname: randomizeName('firstname'),
             lastname: randomizeName('lastname'),
         }
-        const recordId = await webApiRequest.post(tableName, { data: columns });
+        const recordId = await webApi.post(tableName, { data: columns });
         await page.goto(`${url.baseForm}contact&id=${recordId}`);
         await use({ columns });
 
-        await webApiRequest.delete(tableName, recordId);
+        await webApi.delete(tableName, recordId);
         await page.close();
     },
 
     // Adds an account with a name value to dataverse then opens the record for use in the test
-    account: async ({ page, url, webApi: webApiRequest }, use) => {
+    account: async ({ page, url, webApi }, use) => {
         const tableName = 'accounts';
         const columns = {
             name: randomizeName('lastname') + 'PLC',
         }
-        const recordId = await webApiRequest.post(tableName, { data: columns });
+        const recordId = await webApi.post(tableName, { data: columns });
         await page.goto(`${url.baseForm}account&id=${recordId}`);
         await use({ columns });
 
-        await webApiRequest.delete(tableName, recordId);
+        await webApi.delete(tableName, recordId);
         await page.close();
     },
 });

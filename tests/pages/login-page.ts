@@ -1,7 +1,14 @@
-import {Page, Locator } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { authenticator } from 'otplib';
 
+interface Credentials {
+    username: string;
+    password: string;
+    secret?: string;
+}
 export class LoginPage {
+
+
 
     private readonly usernameInput: Locator;
     private readonly passwordInput: Locator;
@@ -10,7 +17,7 @@ export class LoginPage {
     private readonly keepMeSignedInText: Locator
     private readonly applicationNavBar: Locator;
 
-    constructor(page: Page){
+    constructor(page: Page) {
         this.usernameInput = page.getByPlaceholder('Email, phone, or Skype');
         this.passwordInput = page.getByPlaceholder('Password');
         this.multiFactorAuthenticationInput = page.getByPlaceholder('Code');
@@ -19,26 +26,26 @@ export class LoginPage {
         this.keepMeSignedInText = page.locator("#KmsiDescription")
     }
 
- async withCredentials(username: string, password: string, clientSecret: string) {
-    await this.usernameInput.fill(username);
-    await this.submitButton.click();
-
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
-
-    try {
-        this.multiFactorAuthenticationInput.waitFor({state: "visible", timeout: 3000});
-        const generatedCode = authenticator.generate(clientSecret);
-        await this.multiFactorAuthenticationInput.fill(generatedCode);
+    async withCredentials(credentials: Credentials) {
+  
+        await this.usernameInput.fill(credentials.username);
         await this.submitButton.click();
 
-    } finally {
-        await this.keepMeSignedInText.waitFor({state: "visible"})
-        await this.submitButton.click();  
-    
-        await this.applicationNavBar.waitFor({state: "visible"});
-    }
+        await this.passwordInput.fill(credentials.password);
+        await this.submitButton.click();
 
- }
+        if (credentials.secret) {
+            this.multiFactorAuthenticationInput.waitFor({ state: "visible", timeout: 3000 });
+            const generatedCode = authenticator.generate(credentials.secret);
+            await this.multiFactorAuthenticationInput.fill(generatedCode);
+            await this.submitButton.click();
+        }
+
+        await this.keepMeSignedInText.waitFor({ state: "visible" })
+        await this.submitButton.click();
+
+        await this.applicationNavBar.waitFor({ state: "visible" });
+
+    }
 
 }

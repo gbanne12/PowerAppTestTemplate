@@ -24,7 +24,7 @@ steps:
   - script: export USERNAME=$(USERNAME) PASSWORD=$(PASSWORD) SECRET=$(SECRET) APP_ID=$(APP_ID) COPILOT_ENABLED=$(COPILOT_ENABLED)   #variables added to DevOps at Pipelines > Library with above variable group name 
     displayName: "Export environment variables for use in the test"
 
-  - script: npx playwright test --project=Chrome
+  - script: npx playwright test --project="full-run"
     displayName: "Run the main test project"
     env:
       CI: "true"
