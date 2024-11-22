@@ -14,7 +14,7 @@
     - [Using GoTo](#using-goto)
     - [Copilot pane](#copilot-pane)
     - [Test Generator](#codegen)
-    - [Trace](#trace)
+    - [Debugging Failures](#debugging-failures-with-trace)
 
 
 # Using the project
@@ -29,14 +29,14 @@ The values can be added as environment variables [further details in the Pipelin
 
 If the ```config.json``` file exists these values will be used.
 
- - **appId**: The application id for accessing the app url directly
- - **username**: The email address for accessing the aplication
- - **password**: The coresponding password for the above username
- - **secret**: The client secret from the above user's MFA device. Can be obtained during setup of the MFA device. See https://github.com/microsoft/EasyRepro?tab=readme-ov-file#mfa-support
- - **copilotEnabled** - true if the copilot pane is enabled for the power app, false if not
+ - **appId**: Required - The application id for accessing the app url directly
+ - **username**: Required - The email address for accessing the aplication
+ - **password**: Required - The coresponding password for the above username
+ - **secret**: Optional - The client secret from the above user's MFA device. Can be obtained during setup of the MFA device. See https://github.com/microsoft/EasyRepro?tab=readme-ov-file#mfa-support
+ - **copilotEnabled** - Optional - true if the copilot pane is enabled for the power app, defaults to false
 
 
- Example config.json file:
+ Example ```config.json``` file:
 
  ```typescript
 {
@@ -63,7 +63,9 @@ A pipeline linked to the repository needs to be created. The config values need 
 
 The environment variables should be added in all caps (i.e SCREAMING_SNAKE_CASE). 
 
-The variable group should have each of the the following values set; ```USERNAME, PASSWORD, SECRET, APP_ID, COPILOT_ENABLED```
+As above the variable group should have each of the the following values set; ```USERNAME, PASSWORD, APP_ID, ```
+
+The following 2 values are optional ```COPILOT_ENABLED, SECRET```
 
 ## Reporting
 
@@ -95,6 +97,8 @@ Combining this functionality with the ability to store authenticated browser sta
 
 To run the **full-run** project using the following command
 ```npx playwright --project=full-run```
+
+
 
 
 # Using Playwright with a Model Driven App
@@ -249,7 +253,7 @@ Whereas the phone number field value that exists in the grid can be found using:
 page.getByRole('gridcell', {name: '555-0109'})
 ``` 
 
-## Finding Elements outside the viewport
+## Finding Elements Outside the Viewport
 When a form is opened in a model driven app, only fields within the currently displayed sections are loaded in the DOM.  If you try to find an element within anotherr section Playwright will be unable to find the element.  
 
 The section headers are always loaded when the form is opened so first you can find this element and scroll to it.  Once the section is scrolled into view, the element can then be found.  Sections are given an ```aria-label``` attribute with the value set as the section name in all caps.  Therefore, the post code field in the address section could be populated as follows:
@@ -274,9 +278,9 @@ await accountName.fill("Microsoft");
 ```
 
 ## Copilot Pane
-When copilot is enabled the copilot pane is automatically opened following login to the app and whenever the ```page.goTo()``` method above is called.  The pane is opened after all the page content is loaded and can interfere with the test run and needs to be closed. 
+When copilot is enabled for the app, the copilot pane is automatically opened following login and whenever the ```page.goTo()``` method above is called.  The pane is opened after all the page content is loaded and can gain focus which can cause the test to fail.  
 
-This project shows an example of how to do so by updating the page.goTo() method to wait for and close the pane.  This is done as part of the test fixture at ```tests/fixtures/test-fixtures.ts```. 
+This project shows an example of how to do so by updating Playwright's ```page.goTo()``` method to wait for and close the pane when it appears.  This is done as part of the updated ```page``` test fixture at ```tests/fixtures/test-fixtures.ts```. 
 
 
 ## Test Generator
@@ -297,13 +301,15 @@ To save the storage state use:
 Once saved, the authenticated state can be reused in a later run:
 ```playwright codegen  --load-storage=auth.json```
 
-## Trace
-Playwright allows recording a trace of a test to aid debugging and can be configured in the **use** section of the ```playwright.config.ts``` file.  
+## Debugging Failures With Trace
+Playwright allows recording a trace of a test so that a failure can be walked back through.  Thisis  configured in the **use** section of the ```playwright.config.ts``` file.  
 https://playwright.dev/docs/trace-viewer
 
-It is currently enabled to be recorded on the first retry on a failed test but can be set to always. 
+ 
 
-It can be useful for debugging a failure on a CI run and can be downloaded from an Azure DevOps run by going to the Pipeline results page selecting the ```tests``` tab, selelcting a test and then viewing attachments. .
+It can be useful for debugging a failing test on a CI run.  Through the config file failing tests are set to be retried once and on the retry the trace will be recorded (it can however be set to always record a trace).
+
+The ```trace.zip``` can be downloaded from an Azure DevOps pipeline run by going to the Pipeline results page selecting the ```tests``` tab, locating the failed test and then viewing the attachments.  Once downloaded it can be ran from a directory where Playwright is installed with the command ```npx playwright show-trace trace.zip```
 
 
 
