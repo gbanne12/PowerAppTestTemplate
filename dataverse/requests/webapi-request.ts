@@ -1,9 +1,9 @@
 import { APIResponse, Page } from "@playwright/test";
 import config from '../../playwright.config';
 
-type SingleRecord = { [key: string]: string };
-type RecordsArray = { value: SingleRecord[] };
-type DataverseResponse = SingleRecord | RecordsArray;
+export type SingleRecord = { [key: string]: string };
+export type RecordsArray = { value: SingleRecord[] };
+export type DataverseResponse = SingleRecord | RecordsArray;
 
 export type DataverseTable = {
     logicalName: string,
@@ -49,7 +49,7 @@ export class WebApiRequest {
         // idstring and query string are optional and will be empty if not provided
         const queryString = options?.select ? `?$select=${options.select.join(',')}` : '';
         const idString = options?.id ? `(${options.id})` : '';
-        const url = webApiUrl + "/" + entity + idString + queryString;  
+        const url = webApiUrl + "/" + entity + idString + queryString;
 
         const serverResponse = await this.context.request.get(url, { failOnStatusCode: true });
 
@@ -139,37 +139,6 @@ export class WebApiRequest {
 
         const response = await this.context.request.patch(url, { data: patchData, headers: patchHeaders, failOnStatusCode: true });
         return response.status();
-    }
-
-    
-    /**
-     * Initializes a new record in the Dataverse entity by copying the values from an existing record.
-     * @param entity The Dataverse entity to initialize.
-     * @param recordIdentifier The identifier of the existing record to copy values from.
-     * @returns A Promise that resolves to the identifier of the newly created record.
-     */
-    public async initializeFrom(entity: DataverseTable, recordIdentifier: string): Promise<string> {
-        
-        const validForCreateSuffix = `/EntityDefinitions(LogicalName='${entity.logicalName}')/Attributes?$select=LogicalName&$filter=IsRequiredForForm%20eq%20true&IsValidForCreate%20eq%20true`;
-
-        const apiResponse = await this.context.request.get(webApiUrl + validForCreateSuffix, { failOnStatusCode: true });
-        
-        const validForCreateFields = await this.parseValuesFromJson(apiResponse);
-
-        const logicalNamesArray = validForCreateFields.map(attribute => attribute.LogicalName);
-        const recordToCopy = await this.get(entity.logicalCollectionName, { id: recordIdentifier, select: logicalNamesArray });
-
-        const removePropertyByValue = (response: DataverseResponse, value: string) => {
-            for (const property in response) {
-              if (response[property] === value) {
-                delete response[property];
-                break; // Assuming there is only one property with the specified value
-              }
-            }
-          };
-        removePropertyByValue(recordToCopy, recordIdentifier); // dont submit the existing record ID.
-
-        return await this.post(entity.logicalCollectionName, { data: recordToCopy });
     }
 
 

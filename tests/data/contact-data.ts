@@ -50,7 +50,7 @@ const surnames: string[] = [
 ];
 
 
-export function randomizeName(name: 'firstname' | 'lastname'): string {
+export function getRandomName(name: 'firstname' | 'lastname'): string {
     const array = (name === 'firstname') ? firstNames : surnames;
     return array[Math.floor(Math.random() * array.length)];
 }

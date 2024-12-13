@@ -1,36 +1,7 @@
 import { Page, expect, test as baseTest } from '@playwright/test';
-import { randomizeName } from '../data/contact-data.js';
+import { getRandomName } from '../data/contact-data.js';
 import { WebApiRequest } from '../../dataverse/requests/webapi-request.js';
-import { Contact } from '../../dataverse/entities/contact.js';
 import config from '../../powerplatform.config.js';
-
-/***
- * Extend the Playwright assertions by providing custom matchers. 
- * These matchers will be available on the expect object.
- */
-expect.extend({
-    // Custom matcher to check if Contact exists within array of contacts
-    toContainContact(contacts: Contact[], actual: Contact) {
-        const contactExists = contacts.some(contact =>
-            contact.lastname === actual.getLastName() &&
-            contact?.firstname === actual.getFirstName() &&
-            contact?.emailaddress1 === actual.getEmail());
-
-        if (contactExists) {
-            return {
-                pass: true,
-                message: () => `Found contact: ${actual.getFirstName()} ${actual.getLastName()}`,
-
-            };
-        } else {
-            return {
-                pass: false,
-                message: () => `Expected contact to exist, but did not find: ${actual.getFirstName()} ${actual.getLastName()}`,
-            };
-        }
-    }
-
-});
 
 /**
  * Define the types that will be available to the extended test function. 
@@ -88,7 +59,7 @@ export const test = baseTest.extend<TestHelpers>({
     // Make common URLs available to the tests
     url: async ({ baseURL, page }, use) => {
         const webApiEndpoint = baseURL + '/api/data/v9.2/';
-        const application = baseURL + '/main.aspx?appid=3867134f-9a92-ed11-aad1-000d3adf7bf1';
+        const application = baseURL + `/main.aspx?appid=${config.appId}`;
         const baseForm = application + '&pagetype=entityrecord&etn=';
         const baseView = application + '&pagetype=entitylist&etn=';
 
@@ -108,8 +79,8 @@ export const test = baseTest.extend<TestHelpers>({
     contact: async ({ page, webApi, url }, use) => {
         const tableName = 'contacts';
         const columns = {
-            firstname: randomizeName('firstname'),
-            lastname: randomizeName('lastname'),
+            firstname: getRandomName('firstname'),
+            lastname: getRandomName('lastname'),
         }
         const recordId = await webApi.post(tableName, { data: columns });
         await page.goto(`${url.baseForm}contact&id=${recordId}`);
@@ -123,7 +94,7 @@ export const test = baseTest.extend<TestHelpers>({
     account: async ({ page, url, webApi }, use) => {
         const tableName = 'accounts';
         const columns = {
-            name: randomizeName('lastname') + 'PLC',
+            name: getRandomName('lastname') + 'PLC',
         }
         const recordId = await webApi.post(tableName, { data: columns });
         await page.goto(`${url.baseForm}account&id=${recordId}`);

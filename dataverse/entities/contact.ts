@@ -1,4 +1,4 @@
-import { randomizeName, getTimestamp } from '../../tests/data/contact-data.js';
+import { getRandomName, getTimestamp } from '../../tests/data/contact-data.js';
 
 
 /***
@@ -89,8 +89,8 @@ export class Contact implements ContactEntity {
         }
 
         public buildGenericContact(): Contact {
-            const firstname = randomizeName('firstname');
-            const lastname = randomizeName('lastname') + getTimestamp();
+            const firstname = getRandomName('firstname');
+            const lastname = getRandomName('lastname') + getTimestamp();
 
             this.contact.setFirstName(firstname);
             this.contact.setLastName(lastname);

@@ -45,7 +45,6 @@ export class LoginPage {
         await this.submitButton.click();
 
         await this.applicationNavBar.waitFor({ state: "visible" });
-
     }
 
 }
