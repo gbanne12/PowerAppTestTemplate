@@ -1,6 +1,4 @@
 import { Locator, Page } from '@playwright/test';
-
-import { Contact } from '../../../dataverse/entities/contact.js';
 import { EntityForm } from './entity-form-page.js';
 
 
