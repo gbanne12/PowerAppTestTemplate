@@ -1,4 +1,4 @@
-import { defineConfig, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { RecordsArray, WebApiRequest } from '../../dataverse/requests/webapi-request.js';
 import { ContactForm } from '../pages/forms/contact-form-page.js';
 import { getRandomName } from '../data/contact-data.js';
